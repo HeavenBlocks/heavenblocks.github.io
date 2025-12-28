@@ -1,27 +1,26 @@
 import { keys } from "./input.js";
-import { platforms } from "../entities/platform.js";
+import { colliders } from "../entities/world.js";
 import { resolveYCollision } from "./collision.js";
 
 export function updatePlayer(player, state) {
-    const speed = 0.12;
-    const gravity = -0.015;
-    const jumpForce = 0.32;
-    const coyoteMax = 8;
+    const speed = 0.15;
+    const gravity = -0.018;
+    const jumpForce = 0.38;
+    const coyoteMax = 10;
 
-    // Horizontal movement
+    // Move relative to facing
     if (keys.KeyA) player.position.x -= speed;
     if (keys.KeyD) player.position.x += speed;
     if (keys.KeyW) player.position.z -= speed;
     if (keys.KeyS) player.position.z += speed;
 
-    // Gravity
     state.velocity.y += gravity;
     player.position.y += state.velocity.y;
 
     let grounded = false;
 
-    for (const p of platforms) {
-        if (resolveYCollision(player, p)) {
+    for (const c of colliders) {
+        if (resolveYCollision(player, c)) {
             state.velocity.y = 0;
             grounded = true;
         }
@@ -31,13 +30,17 @@ export function updatePlayer(player, state) {
         state.onGround = true;
         state.coyoteTime = coyoteMax;
     } else {
-        state.onGround = false;
         state.coyoteTime--;
     }
 
-    // Jump with forgiveness
     if (keys.Space && state.coyoteTime > 0) {
         state.velocity.y = jumpForce;
         state.coyoteTime = 0;
+    }
+
+    // Respawn
+    if (player.position.y < -40) {
+        player.position.set(0, 5, 0);
+        state.velocity.set(0, 0, 0);
     }
 }
